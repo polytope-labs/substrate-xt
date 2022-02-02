@@ -36,9 +36,7 @@ Contains utilities for constructing and submiting extrinsics to a live substrate
 		let call = Call::System(frame_system::Call::remark { remark: vec![0; 32] });
 		let pair = sp_keyring::AccountKeyring::Bob.pair();
 		let client = Client::<XtConstructor>::new(WS_URL, true).unwrap();
-		// Construct extrinsic outside of async context
-		// Constructing extrinsic inside async context can cause code to
-		// panic in cases where externalities read storage
+
         let ext = client.construct_extrinsic(call, pair).expect("Expected extrinsic to be constructed");
 		client.block_on(async {
 			let progress = client

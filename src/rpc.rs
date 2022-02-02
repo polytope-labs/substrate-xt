@@ -15,10 +15,10 @@ use sp_runtime::{
 	traits::IdentifyAccount,
 	MultiSignature, MultiSigner,
 };
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::Arc};
 
 pub struct Client<T> {
-	client: WsClient,
+	client: Arc<WsClient>,
 	rt: tokio::runtime::Runtime,
 	_phantom: PhantomData<T>,
 }
@@ -47,7 +47,7 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 			.build(from.as_ref())
 			.map_err(|e| format!("`WsClientBuilder` failed to build: {:?}", e));
 		let client = rt.block_on(future).map_err(|_| "Failed to build client")?;
-		Ok(Client { client, rt, _phantom: PhantomData })
+		Ok(Client { client: Arc::new(client), rt, _phantom: PhantomData })
 	}
 
 	pub fn block_on<O>(&self, execute: impl Future<Output = O>) {
@@ -129,59 +129,17 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 		key: StorageKey,
 		at: Option<<T::Runtime as frame_system::Config>::Hash>,
 	) -> Option<StorageData> {
-		let future = self
-			.client
-			.request::<Option<StorageData>>("state_getStorage", rpc_params!(key, at));
-		self.rt.block_on(future).ok().flatten()
-	}
-}
-
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use node_runtime::{Runtime, SignedExtra};
-	use sp_runtime::generic::Era;
-
-	pub struct XtConstructor;
-
-	const WS_URL: &'static str = "ws://127.0.0.1:9944";
-
-	impl ConstructExt for XtConstructor {
-		type Runtime = Runtime;
-		type Pair = sp_core::sr25519::Pair;
-		type SignedExtra = SignedExtra;
-
-		fn signed_extras(
-			account_id: <Self::Runtime as frame_system::Config>::AccountId,
-		) -> Self::SignedExtra {
-			let nonce = frame_system::Pallet::<Self::Runtime>::account_nonce(account_id);
-			(
-				frame_system::CheckNonZeroSender::<Runtime>::new(),
-				frame_system::CheckSpecVersion::<Runtime>::new(),
-				frame_system::CheckTxVersion::<Runtime>::new(),
-				frame_system::CheckGenesis::<Runtime>::new(),
-				frame_system::CheckEra::<Runtime>::from(Era::Immortal),
-				frame_system::CheckNonce::<Runtime>::from(nonce),
-				frame_system::CheckWeight::<Runtime>::new(),
-				pallet_asset_tx_payment::ChargeAssetTxPayment::<Runtime>::from(0, None)
-			)
-		}
-	}
-
-	#[test]
-	fn read_storage_map_and_storage_double_map() {
-		let client = Client::<XtConstructor>::new(WS_URL, true).unwrap();
-		let mut externalities = RpcExternalities::<XtConstructor>::new(&client);
-
-        externalities.execute_with(|| {
-            let pair = sp_keyring::AccountKeyring::Bob.pair();
-            let account_id = MultiSigner::from(pair.public()).into_account();
-            // Read storage map
-			frame_system::Pallet::<Runtime>::account_nonce(account_id);
-
-            // Read storage double map
-            pallet_im_online::Pallet::<Runtime>::is_online(0);
+		let client = self.client.clone();
+		let rt = self.rt.handle().clone();
+		let handle = std::thread::spawn(move || {
+			let future =
+				client.request::<Option<StorageData>>("state_getStorage", rpc_params!(key, at));
+			rt.block_on(future).ok().flatten()
 		});
+		if let Ok(res) = handle.join() {
+			res
+		} else {
+			None
+		}
 	}
 }

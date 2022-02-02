@@ -42,7 +42,7 @@ pub trait ConstructExt {
 mod tests {
 	use super::*;
 	use node_runtime::{Call, Runtime, SignedExtra};
-	use sp_runtime::generic::Era;
+	use sp_runtime::{generic::Era, traits::IdentifyAccount, MultiSigner};
 
 	pub struct XtConstructor;
 
@@ -75,18 +75,32 @@ mod tests {
 		let call = Call::System(frame_system::Call::remark { remark: vec![0; 32] });
 		let pair = sp_keyring::AccountKeyring::Bob.pair();
 		let client = Client::<XtConstructor>::new(WS_URL).unwrap();
-		// Construct extrinsic outside of async context
-		// Constructing extrinsic inside async context can cause code to
-		// panic in cases where externalities read storage
-		let ext = client
-			.construct_extrinsic(call, pair)
-			.expect("Expected extrinsic to be constructed");
+
 		client.block_on(async {
+			let ext = client
+				.construct_extrinsic(call, pair)
+				.expect("Expected extrinsic to be constructed");
 			let progress = client
 				.submit_and_watch(ext)
 				.await
 				.expect("Expected extrinsic to be submitted successfully");
 			progress.wait_for_in_block().await.unwrap();
 		})
+	}
+
+	#[test]
+	fn should_read_storage_map_and_storage_double_map() {
+		let client = Client::<XtConstructor>::new(WS_URL).unwrap();
+		let mut externalities = RpcExternalities::<XtConstructor>::new(&client);
+
+		externalities.execute_with(|| {
+			let pair = sp_keyring::AccountKeyring::Bob.pair();
+			let account_id = MultiSigner::from(pair.public()).into_account();
+			// Reading storage map should not panic
+			frame_system::Pallet::<Runtime>::account_nonce(account_id);
+
+			// Reading storage double map should not panic
+			pallet_im_online::Pallet::<Runtime>::is_online(0);
+		});
 	}
 }
