@@ -31,7 +31,7 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 				tokio::runtime::Builder::new_multi_thread()
 					.enable_all()
 					.build()
-					.map_err(|| format!("Unable to build tokio runtime"))?;
+					.map_err(|| "Unable to build tokio runtime")?;
 			}
 			#[cfg(not(feature = "multithread"))]
 			{
