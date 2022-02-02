@@ -1,23 +1,16 @@
-use std::{
-	any::{Any, TypeId},
-	marker::PhantomData,
-};
+use std::any::{Any, TypeId};
 
-use crate::rpc::Client;
+use crate::{rpc::Client, ConstructExt};
 use sc_client_api::{ChildInfo, StorageKey};
-use crate::ConstructExt;
 
 pub(crate) struct RpcExternalities<'a, T: ConstructExt> {
 	client: &'a Client<T>,
 	extensions: sp_externalities::Extensions,
 }
 
-impl<'a, T: frame_system::Config> RpcExternalities<'a, T> {
+impl<'a, T: ConstructExt + Send + Sync> RpcExternalities<'a, T> {
 	pub(crate) fn new(client: &'a Client<T>) -> Self {
-		Self {
-			client,
-			extensions: sp_externalities::Extensions::new(),
-		}
+		Self { client, extensions: sp_externalities::Extensions::new() }
 	}
 
 	pub(crate) fn execute_with<R>(&'a mut self, execute: impl FnOnce() -> R) -> R {
@@ -49,7 +42,9 @@ impl<'a, T: ConstructExt> sp_externalities::ExtensionStore for RpcExternalities<
 	}
 }
 
-impl<'a, T: ConstructExt> sp_externalities::Externalities for RpcExternalities<'a, T> {
+impl<'a, T: ConstructExt + Send + Sync> sp_externalities::Externalities
+	for RpcExternalities<'a, T>
+{
 	fn set_offchain_storage(&mut self, _key: &[u8], _value: Option<&[u8]>) {
 		unimplemented!("set_offchain_storage")
 	}
