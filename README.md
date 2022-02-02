@@ -19,15 +19,14 @@ Contains utilities for constructing and submiting extrinsics to a live substrate
 		) -> Self::SignedExtra {
 			let nonce = frame_system::Pallet::<Self::Runtime>::account_nonce(account_id);
 			(
-				//frame_system::CheckNonZeroSender::<Runtime>::new(),
+				frame_system::CheckNonZeroSender::<Runtime>::new(),
 				frame_system::CheckSpecVersion::<Runtime>::new(),
 				frame_system::CheckTxVersion::<Runtime>::new(),
 				frame_system::CheckGenesis::<Runtime>::new(),
 				frame_system::CheckEra::<Runtime>::from(Era::Immortal),
 				frame_system::CheckNonce::<Runtime>::from(nonce),
 				frame_system::CheckWeight::<Runtime>::new(),
-				//pallet_asset_tx_payment::ChargeAssetTxPayment::<Runtime>::from(0, None),
-                pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(0),
+				pallet_asset_tx_payment::ChargeAssetTxPayment::<Runtime>::from(0, None),
 			)
 		}
 	}
