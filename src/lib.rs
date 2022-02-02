@@ -7,6 +7,7 @@ use sp_core::Pair as TraitPair;
 mod ext;
 mod extrinsic;
 mod rpc;
+
 pub use rpc::Client;
 
 use extrinsic::ExtrinsicProgress;
@@ -64,7 +65,7 @@ mod tests {
 				frame_system::CheckEra::<Runtime>::from(Era::Immortal),
 				frame_system::CheckNonce::<Runtime>::from(nonce),
 				frame_system::CheckWeight::<Runtime>::new(),
-				pallet_asset_tx_payment::ChargeAssetTxPayment::<Runtime>::from(0, None)
+				pallet_asset_tx_payment::ChargeAssetTxPayment::<Runtime>::from(0, None),
 			)
 		}
 	}
@@ -73,11 +74,13 @@ mod tests {
 	fn should_submit_and_watch_extrinsic() {
 		let call = Call::System(frame_system::Call::remark { remark: vec![0; 32] });
 		let pair = sp_keyring::AccountKeyring::Bob.pair();
-		let client = Client::<XtConstructor>::new(WS_URL, true).unwrap();
+		let client = Client::<XtConstructor>::new(WS_URL).unwrap();
 		// Construct extrinsic outside of async context
 		// Constructing extrinsic inside async context can cause code to
 		// panic in cases where externalities read storage
-		let ext = client.construct_ext(call, pair).expect("Expected extrinsic to be constructed");
+		let ext = client
+			.construct_extrinsic(call, pair)
+			.expect("Expected extrinsic to be constructed");
 		client.block_on(async {
 			let progress = client
 				.submit_and_watch(ext)

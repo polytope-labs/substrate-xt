@@ -1,4 +1,6 @@
-use crate::{ConstructExt, ExtrinsicProgress, RpcExternalities, TraitPair, UncheckedExtrinsicFor};
+use crate::{
+	AdrressFor, ConstructExt, ExtrinsicProgress, RpcExternalities, TraitPair, UncheckedExtrinsicFor,
+};
 use futures::{Future, TryFutureExt};
 use jsonrpsee::{
 	core::client::{ClientT, SubscriptionClientT},
@@ -11,7 +13,7 @@ use sp_core::crypto::AccountId32;
 use sp_runtime::{
 	generic::{SignedPayload, UncheckedExtrinsic},
 	traits::IdentifyAccount,
-	MultiAddress, MultiSignature, MultiSigner,
+	MultiSignature, MultiSigner,
 };
 use std::marker::PhantomData;
 
@@ -22,20 +24,22 @@ pub struct Client<T> {
 }
 
 impl<T: ConstructExt + Send + Sync> Client<T> {
-	pub fn new<S: AsRef<str>>(
-		from: S,
-		enable_multithreaded: bool,
-	) -> Result<Client<T>, &'static str> {
-		let rt = if enable_multithreaded {
-			tokio::runtime::Builder::new_multi_thread()
-				.enable_all()
-				.build()
-				.expect("Unable to build tokio runtime")
-		} else {
-			tokio::runtime::Builder::new_current_thread()
-				.enable_all()
-				.build()
-				.expect("Unable to build tokio runtime")
+	pub fn new<S: AsRef<str>>(from: S) -> Result<Client<T>, &'static str> {
+		let rt = {
+			#[cfg(feature = "multithread")]
+			{
+				tokio::runtime::Builder::new_multi_thread()
+					.enable_all()
+					.build()
+					.map_err(|| format!("Unable to build tokio runtime"))?;
+			}
+			#[cfg(not(feature = "multithread"))]
+			{
+				tokio::runtime::Builder::new_current_thread()
+					.enable_all()
+					.build()
+					.expect("Unable to build tokio runtime")
+			}
 		};
 
 		let future = WsClientBuilder::default()
@@ -50,7 +54,7 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 		self.rt.block_on(execute);
 	}
 
-	pub fn construct_ext(
+	pub fn construct_extrinsic(
 		&self,
 		call: <<T as ConstructExt>::Runtime as frame_system::Config>::Call,
 		pair: T::Pair,
@@ -60,10 +64,7 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 		<<T as ConstructExt>::Runtime as frame_system::Config>::Call: Encode + Send,
 		MultiSigner: From<<<T as ConstructExt>::Pair as sp_core::Pair>::Public>,
 		MultiSignature: From<<<T as ConstructExt>::Pair as TraitPair>::Signature>,
-		MultiAddress<
-			<<T as ConstructExt>::Runtime as frame_system::Config>::AccountId,
-			<<T as ConstructExt>::Runtime as frame_system::Config>::Index,
-		>: From<AccountId32>,
+		AdrressFor<T>: From<AccountId32>,
 	{
 		let account_id = MultiSigner::from(pair.public()).into_account();
 		let mut externalities = RpcExternalities::<T>::new(self);
