@@ -10,7 +10,7 @@ pub struct XtConstructor;
 impl ConstructExt for XtConstructor {
 	type Runtime = Runtime;
 	type Address = Address;
-  type Signature = Signature;
+        type Signature = Signature;
 	type Pair = sp_core::sr25519::Pair;
 	type SignedExtra = SignedExtra;
 	const WS_URL: &'static str = "ws://127.0.0.1:9944";
