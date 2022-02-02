@@ -1,0 +1,37 @@
+[package]
+name = "sendxt"
+version = "0.1.0"
+edition = "2021"
+authors = ["David Salami <david@composable.finance>"]
+publish = false
+
+[dependencies]
+parity-scale-codec = "2.3.1"
+async-trait = "0.1.52"
+thiserror = "1.0.30"
+
+# client deps
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+
+
+# primitive deps
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+
+# frame deps
+frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+
+# Calling RPC
+jsonrpsee = { version = "0.8", features = ["ws-client", "macros"] }
+futures = "0.3.19"
+tokio = { version = "1.16.1 ", features = ["rt"] }
+
+[dev-dependencies]
+node-runtime = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.16" }
+sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
