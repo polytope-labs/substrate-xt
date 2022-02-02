@@ -1,5 +1,5 @@
-## Construct and send Extrinsics to a substrate node
-
+## Construct and submit Extrinsics
+Contains utilities for constructing and submiting extrinsics to a live substrate node
 ## Usage
 Usage of this library 
 ```
@@ -46,7 +46,7 @@ Usage of this library
 
 ## Testing
 1. To run the tests in this folder, download a substrate node binary   
-release https://releases.parity.io/substrate/x86_64-debian:stretch/latest/substrate/substrate or build it locally 
+release https://releases.parity.io/substrate/x86_64-debian:stretch/latest/substrate/substrate or build one locally 
 
 2. Run this binary using the default websocket port
 3. Run `cargo +nightly test`

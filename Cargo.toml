@@ -1,8 +1,8 @@
 [package]
-name = "sendxt"
+name = "substrate-xt"
 version = "0.1.0"
 edition = "2021"
-authors = ["David Salami <david@composable.finance>"]
+authors = ["David Salami"]
 publish = false
 
 [dependencies]
