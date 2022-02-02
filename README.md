@@ -30,11 +30,11 @@ fn should_submit_and_watch_extrinsic() {
 	let call = Call::System(frame_system::Call::remark {     remark: vec![0;32] });
 	let pair = sp_keyring::AccountKeyring::Bob.pair();
 	let client = XtConstructor::build_client().unwrap();
-    // Construct extrinsic outside of async context
-		// Constructing extrinsic inside async context can cause code to
-		// panic in cases where externalities read storage
-  let ext = XtConstructor::construct_ext(&client, call,  pair, extra)
-			.expect("Expected extrinsic to be constructed");
+        // Construct extrinsic outside of async context
+        // Constructing extrinsic inside async context can cause code to
+	// panic in cases where externalities read storage
+        let ext = XtConstructor::construct_ext(&client, call,  pair, extra)
+		.expect("Expected extrinsic to be constructed");
 	client.rt.block_on(async {
 	  let progress = XtConstructor::submit_and_watch(&client, ext)
 		.await
