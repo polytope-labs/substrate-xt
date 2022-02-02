@@ -6126,6 +6126,7 @@ dependencies = [
  "jsonrpsee",
  "node-runtime",
  "pallet-asset-tx-payment",
+ "pallet-im-online",
  "parity-scale-codec",
  "sc-client-api",
  "sc-rpc-api",
