@@ -7,7 +7,6 @@ publish = false
 
 [dependencies]
 parity-scale-codec = "2.3.1"
-async-trait = "0.1.52"
 thiserror = "1.0.30"
 
 # client deps
@@ -29,9 +28,10 @@ frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "
 # Calling RPC
 jsonrpsee = { version = "0.8", features = ["ws-client", "macros"] }
 futures = "0.3.19"
-tokio = { version = "1.16.1 ", features = ["rt"] }
+tokio = { version = "1.16.1 ", features = ["rt-multi-thread"] }
 
 [dev-dependencies]
 node-runtime = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.16" }
 sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
 pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+pallet-im-online = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }

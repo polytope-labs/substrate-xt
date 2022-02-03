@@ -1,24 +1,16 @@
-use std::{
-	any::{Any, TypeId},
-	marker::PhantomData,
-};
+use std::any::{Any, TypeId};
 
-use crate::rpc::RpcClient;
+use crate::{rpc::Client, ConstructExt};
 use sc_client_api::{ChildInfo, StorageKey};
 
-pub(crate) struct MockExternalities<'a, T: frame_system::Config> {
-	client: &'a RpcClient,
+pub(crate) struct RpcExternalities<'a, T: ConstructExt> {
+	client: &'a Client<T>,
 	extensions: sp_externalities::Extensions,
-	_phantom: PhantomData<T>,
 }
 
-impl<'a, T: frame_system::Config> MockExternalities<'a, T> {
-	pub(crate) fn new(client: &'a RpcClient) -> Self {
-		Self {
-			client,
-			extensions: sp_externalities::Extensions::new(),
-			_phantom: Default::default(),
-		}
+impl<'a, T: ConstructExt + Send + Sync> RpcExternalities<'a, T> {
+	pub(crate) fn new(client: &'a Client<T>) -> Self {
+		Self { client, extensions: sp_externalities::Extensions::new() }
 	}
 
 	pub(crate) fn execute_with<R>(&'a mut self, execute: impl FnOnce() -> R) -> R {
@@ -26,7 +18,7 @@ impl<'a, T: frame_system::Config> MockExternalities<'a, T> {
 	}
 }
 
-impl<'a, T: frame_system::Config> sp_externalities::ExtensionStore for MockExternalities<'a, T> {
+impl<'a, T: ConstructExt> sp_externalities::ExtensionStore for RpcExternalities<'a, T> {
 	fn extension_by_type_id(&mut self, type_id: TypeId) -> Option<&mut dyn Any> {
 		self.extensions.get_mut(type_id)
 	}
@@ -50,13 +42,15 @@ impl<'a, T: frame_system::Config> sp_externalities::ExtensionStore for MockExter
 	}
 }
 
-impl<'a, T: frame_system::Config> sp_externalities::Externalities for MockExternalities<'a, T> {
+impl<'a, T: ConstructExt + Send + Sync> sp_externalities::Externalities
+	for RpcExternalities<'a, T>
+{
 	fn set_offchain_storage(&mut self, _key: &[u8], _value: Option<&[u8]>) {
 		unimplemented!("set_offchain_storage")
 	}
 
 	fn storage(&self, key: &[u8]) -> Option<Vec<u8>> {
-		self.client.storage::<T>(StorageKey(key.to_vec()), None).map(|data| data.0)
+		self.client.storage(StorageKey(key.to_vec()), None).map(|data| data.0)
 	}
 
 	fn storage_hash(&self, _key: &[u8]) -> Option<Vec<u8>> {
@@ -79,6 +73,23 @@ impl<'a, T: frame_system::Config> sp_externalities::Externalities for MockExtern
 		unimplemented!("next_child_storage_key")
 	}
 
+	fn kill_child_storage(&mut self, _child_info: &ChildInfo, _limit: Option<u32>) -> (bool, u32) {
+		unimplemented!("kill_child_storage")
+	}
+
+	fn clear_prefix(&mut self, _prefix: &[u8], _limit: Option<u32>) -> (bool, u32) {
+		unimplemented!("clear_prefix")
+	}
+
+	fn clear_child_prefix(
+		&mut self,
+		_child_info: &ChildInfo,
+		_prefix: &[u8],
+		_limit: Option<u32>,
+	) -> (bool, u32) {
+		unimplemented!("clear_child_prefix")
+	}
+
 	fn place_storage(&mut self, _key: Vec<u8>, _value: Option<Vec<u8>>) {
 		// no-op
 	}
@@ -90,6 +101,18 @@ impl<'a, T: frame_system::Config> sp_externalities::Externalities for MockExtern
 		_value: Option<Vec<u8>>,
 	) {
 		unimplemented!("place_child_storage")
+	}
+
+	fn storage_root(&mut self, _state_version: sp_storage::StateVersion) -> Vec<u8> {
+		unimplemented!("storage_root")
+	}
+
+	fn child_storage_root(
+		&mut self,
+		_child_info: &ChildInfo,
+		_state_version: sp_storage::StateVersion,
+	) -> Vec<u8> {
+		unimplemented!("child_storage_root")
 	}
 
 	fn storage_append(&mut self, _key: Vec<u8>, _value: Vec<u8>) {
@@ -128,40 +151,11 @@ impl<'a, T: frame_system::Config> sp_externalities::Externalities for MockExtern
 		unimplemented!("get_whitelist")
 	}
 
-	fn get_read_and_written_keys(&self) -> Vec<(Vec<u8>, u32, u32, bool)> {
-		unimplemented!("get_read_and_written_keys")
-	}
-
-	fn kill_child_storage(&mut self, _child_info: &ChildInfo, _limit: Option<u32>) -> (bool, u32) {
-		unimplemented!("kill_child_storage")
-	}
-
-	fn clear_prefix(&mut self, _prefix: &[u8], _limit: Option<u32>) -> (bool, u32) {
-		unimplemented!("clear_prefix")
-	}
-
-	fn clear_child_prefix(
-		&mut self,
-		_child_info: &ChildInfo,
-		_prefix: &[u8],
-		_limit: Option<u32>,
-	) -> (bool, u32) {
-		unimplemented!("clear_child_prefix")
-	}
-
-	fn storage_root(&mut self, _state_version: sp_storage::StateVersion) -> Vec<u8> {
-		unimplemented!("storage_root")
-	}
-
-	fn child_storage_root(
-		&mut self,
-		_child_info: &ChildInfo,
-		_state_version: sp_storage::StateVersion,
-	) -> Vec<u8> {
-		unimplemented!("child_storage_root")
-	}
-
 	fn set_whitelist(&mut self, _new: Vec<sp_storage::TrackedStorageKey>) {
 		unimplemented!("set_whitelist")
+	}
+
+	fn get_read_and_written_keys(&self) -> Vec<(Vec<u8>, u32, u32, bool)> {
+		unimplemented!("get_read_and_written_keys")
 	}
 }
