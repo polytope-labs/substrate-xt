@@ -1,7 +1,7 @@
 use crate::{
 	AdrressFor, ConstructExt, ExtrinsicProgress, RpcExternalities, TraitPair, UncheckedExtrinsicFor,
 };
-use futures::{Future, TryFutureExt};
+use futures::TryFutureExt;
 use jsonrpsee::{
 	core::client::{ClientT, SubscriptionClientT},
 	rpc_params,
@@ -19,39 +19,21 @@ use std::{marker::PhantomData, sync::Arc};
 
 pub struct Client<T> {
 	client: Arc<WsClient>,
-	rt: tokio::runtime::Runtime,
+	handle: tokio::runtime::Handle,
 	_phantom: PhantomData<T>,
 }
 
 impl<T: ConstructExt + Send + Sync> Client<T> {
-	pub fn new<S: AsRef<str>>(from: S) -> Result<Client<T>, &'static str> {
-		let rt = {
-			#[cfg(feature = "multithread")]
-			{
-				tokio::runtime::Builder::new_multi_thread()
-					.enable_all()
-					.build()
-					.map_err(|| "Unable to build tokio runtime")?;
-			}
-			#[cfg(not(feature = "multithread"))]
-			{
-				tokio::runtime::Builder::new_current_thread()
-					.enable_all()
-					.build()
-					.expect("Unable to build tokio runtime")
-			}
-		};
+	pub async fn new<S: AsRef<str>>(from: S) -> Result<Client<T>, &'static str> {
+		let handle = tokio::runtime::Handle::current();
 
-		let future = WsClientBuilder::default()
+		let client = WsClientBuilder::default()
 			.max_request_body_size(u32::MAX)
 			.build(from.as_ref())
-			.map_err(|e| format!("`WsClientBuilder` failed to build: {:?}", e));
-		let client = rt.block_on(future).map_err(|_| "Failed to build client")?;
-		Ok(Client { client: Arc::new(client), rt, _phantom: PhantomData })
-	}
-
-	pub fn block_on<O>(&self, execute: impl Future<Output = O>) {
-		self.rt.block_on(execute);
+			.map_err(|e| format!("`WsClientBuilder` failed to build: {:?}", e))
+			.await
+			.map_err(|_| "Failed to build client")?;
+		Ok(Client { client: Arc::new(client), handle, _phantom: PhantomData })
 	}
 
 	pub fn construct_extrinsic(
@@ -130,11 +112,11 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 		at: Option<<T::Runtime as frame_system::Config>::Hash>,
 	) -> Option<StorageData> {
 		let client = self.client.clone();
-		let rt = self.rt.handle().clone();
+		let handle = self.handle.clone();
 		let handle = std::thread::spawn(move || {
 			let future =
 				client.request::<Option<StorageData>>("state_getStorage", rpc_params!(key, at));
-			rt.block_on(future).ok().flatten()
+			handle.block_on(future).ok().flatten()
 		});
 		if let Ok(res) = handle.join() {
 			res

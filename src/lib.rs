@@ -70,27 +70,29 @@ mod tests {
 		}
 	}
 
-	#[test]
-	fn should_submit_and_watch_extrinsic() {
+	#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+	// #[tokio::test] this won't work, which is also a note on how the api is meant to be used
+	// this client needs at least two threads, because of the call to handle.block_on in the
+	// call to client.storage() from the `RpcExternalities`
+	async fn should_submit_and_watch_extrinsic() {
 		let call = Call::System(frame_system::Call::remark { remark: vec![0; 32] });
 		let pair = sp_keyring::AccountKeyring::Bob.pair();
-		let client = Client::<XtConstructor>::new(WS_URL).unwrap();
+		println!("connecting");
+		let client = Client::<XtConstructor>::new(WS_URL).await.unwrap();
 
-		client.block_on(async {
-			let ext = client
-				.construct_extrinsic(call, pair)
-				.expect("Expected extrinsic to be constructed");
-			let progress = client
-				.submit_and_watch(ext)
-				.await
-				.expect("Expected extrinsic to be submitted successfully");
-			progress.wait_for_in_block().await.unwrap();
-		})
+		let ext = client
+			.construct_extrinsic(call, pair)
+			.expect("Expected extrinsic to be constructed");
+		let progress = client
+			.submit_and_watch(ext)
+			.await
+			.expect("Expected extrinsic to be submitted successfully");
+		progress.wait_for_in_block().await.unwrap();
 	}
 
-	#[test]
-	fn should_read_storage_map_and_storage_double_map() {
-		let client = Client::<XtConstructor>::new(WS_URL).unwrap();
+	#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+	async fn should_read_storage_map_and_storage_double_map() {
+		let client = Client::<XtConstructor>::new(WS_URL).await.unwrap();
 		let mut externalities = RpcExternalities::<XtConstructor>::new(&client);
 
 		externalities.execute_with(|| {
