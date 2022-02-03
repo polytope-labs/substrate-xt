@@ -93,9 +93,8 @@ mod tests {
 	#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 	async fn should_read_storage_map_and_storage_double_map() {
 		let client = Client::<XtConstructor>::new(WS_URL).await.unwrap();
-		let mut externalities = RpcExternalities::<XtConstructor>::new(&client);
 
-		externalities.execute_with(|| {
+		client.with_rpc_externalities(None, || {
 			let pair = sp_keyring::AccountKeyring::Bob.pair();
 			let account_id = MultiSigner::from(pair.public()).into_account();
 			// Reading storage map should not panic

@@ -36,6 +36,15 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 		Ok(Client { client: Arc::new(client), handle, _phantom: PhantomData })
 	}
 
+	pub fn with_rpc_externalities<R>(
+		&self,
+		at: Option<<T::Runtime as frame_system::Config>::Hash>,
+		closure: impl FnOnce() -> R,
+	) -> R {
+		let mut externalities = RpcExternalities::<T>::new(self, at);
+		externalities.execute_with(closure)
+	}
+
 	pub fn construct_extrinsic(
 		&self,
 		call: <<T as ConstructExt>::Runtime as frame_system::Config>::Call,
@@ -49,7 +58,7 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 		AdrressFor<T>: From<AccountId32>,
 	{
 		let account_id = MultiSigner::from(pair.public()).into_account();
-		let mut externalities = RpcExternalities::<T>::new(self);
+		let mut externalities = RpcExternalities::<T>::new(self, None);
 		let payload = externalities.execute_with(|| {
 			let extra = T::signed_extras(account_id.into());
 			SignedPayload::new(call, extra).map_err::<&'static str, _>(|e| e.into())

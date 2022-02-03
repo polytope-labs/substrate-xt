@@ -6,11 +6,15 @@ use sc_client_api::{ChildInfo, StorageKey};
 pub(crate) struct RpcExternalities<'a, T: ConstructExt> {
 	client: &'a Client<T>,
 	extensions: sp_externalities::Extensions,
+	at: Option<<T::Runtime as frame_system::Config>::Hash>,
 }
 
 impl<'a, T: ConstructExt + Send + Sync> RpcExternalities<'a, T> {
-	pub(crate) fn new(client: &'a Client<T>) -> Self {
-		Self { client, extensions: sp_externalities::Extensions::new() }
+	pub(crate) fn new(
+		client: &'a Client<T>,
+		at: Option<<T::Runtime as frame_system::Config>::Hash>,
+	) -> Self {
+		Self { client, at, extensions: sp_externalities::Extensions::new() }
 	}
 
 	pub(crate) fn execute_with<R>(&'a mut self, execute: impl FnOnce() -> R) -> R {
@@ -50,7 +54,7 @@ impl<'a, T: ConstructExt + Send + Sync> sp_externalities::Externalities
 	}
 
 	fn storage(&self, key: &[u8]) -> Option<Vec<u8>> {
-		self.client.storage(StorageKey(key.to_vec()), None).map(|data| data.0)
+		self.client.storage(StorageKey(key.to_vec()), self.at).map(|data| data.0)
 	}
 
 	fn storage_hash(&self, _key: &[u8]) -> Option<Vec<u8>> {
