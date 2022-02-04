@@ -1,5 +1,6 @@
 use crate::{
-	AdrressFor, ConstructExt, ExtrinsicProgress, RpcExternalities, TraitPair, UncheckedExtrinsicFor,
+	error::Error as SubstrateXtError, AdrressFor, ConstructExt, ExtrinsicProgress,
+	RpcExternalities, TraitPair, UncheckedExtrinsicFor,
 };
 use futures::TryFutureExt;
 use jsonrpsee::{
@@ -24,7 +25,7 @@ pub struct Client<T> {
 }
 
 impl<T: ConstructExt + Send + Sync> Client<T> {
-	pub async fn new<S: AsRef<str>>(from: S) -> Result<Client<T>, &'static str> {
+	pub async fn new<S: AsRef<str>>(from: S) -> Result<Client<T>, SubstrateXtError> {
 		let handle = tokio::runtime::Handle::current();
 
 		let client = WsClientBuilder::default()
@@ -32,7 +33,9 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 			.build(from.as_ref())
 			.map_err(|e| format!("`WsClientBuilder` failed to build: {:?}", e))
 			.await
-			.map_err(|_| "Failed to build client")?;
+			.map_err(|e| {
+				SubstrateXtError::ClientError(format!("Failed to build client: {:?}", e))
+			})?;
 		Ok(Client { client: Arc::new(client), handle, _phantom: PhantomData })
 	}
 
@@ -49,7 +52,7 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 		&self,
 		call: <<T as ConstructExt>::Runtime as frame_system::Config>::Call,
 		pair: T::Pair,
-	) -> Result<UncheckedExtrinsicFor<T>, &'static str>
+	) -> Result<UncheckedExtrinsicFor<T>, SubstrateXtError>
 	where
 		<T::Runtime as frame_system::Config>::AccountId: From<AccountId32>,
 		<<T as ConstructExt>::Runtime as frame_system::Config>::Call: Encode + Send,
@@ -59,10 +62,14 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 	{
 		let account_id = MultiSigner::from(pair.public()).into_account();
 		let mut externalities = RpcExternalities::<T>::new(self, None);
-		let payload = externalities.execute_with(|| {
-			let extra = T::signed_extras(account_id.into());
-			SignedPayload::new(call, extra).map_err::<&'static str, _>(|e| e.into())
-		})?;
+		let payload = externalities
+			.execute_with(|| {
+				let extra = T::signed_extras(account_id.into());
+				SignedPayload::new(call, extra).map_err::<&'static str, _>(|e| e.into())
+			})
+			.map_err(|e| {
+				SubstrateXtError::ClientError(format!("Failed to construct extrinsic: {:?}", e))
+			})?;
 
 		let address = MultiSigner::from(pair.public()).into_account();
 		let signature = payload.using_encoded(|encoded| pair.sign(encoded));
@@ -75,7 +82,7 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 	pub async fn submit_extrinsic(
 		&self,
 		xt: UncheckedExtrinsicFor<T>,
-	) -> Result<<T::Runtime as frame_system::Config>::Hash, String>
+	) -> Result<<T::Runtime as frame_system::Config>::Hash, SubstrateXtError>
 	where
 		<<T as ConstructExt>::Runtime as frame_system::Config>::Call: Encode + Send + Sync,
 		<<T as ConstructExt>::Pair as TraitPair>::Signature: Send + Sync + Encode,
@@ -89,14 +96,16 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 				rpc_params!(bytes),
 			)
 			.await
-			.map_err(|e| format!("Failed to submit extrinsic: {:?}", e))?;
+			.map_err(|e| {
+				SubstrateXtError::ClientError(format!("Failed to submit extrinsic: {:?}", e))
+			})?;
 		Ok(ext_hash)
 	}
 
 	pub async fn submit_and_watch(
 		&self,
 		xt: UncheckedExtrinsicFor<T>,
-	) -> Result<ExtrinsicProgress<T::Runtime>, String>
+	) -> Result<ExtrinsicProgress<T::Runtime>, SubstrateXtError>
 	where
 		<<T as ConstructExt>::Runtime as frame_system::Config>::Call: Encode + Send + Sync,
 		<<T as ConstructExt>::Pair as TraitPair>::Signature: Send + Sync + Encode,
@@ -111,7 +120,9 @@ impl<T: ConstructExt + Send + Sync> Client<T> {
 				"author_unwatchExtrinsic",
 			)
 			.await
-			.map_err(|e| format!("Failed to submit extrinsic: {:?}", e))?;
+			.map_err(|e| {
+				SubstrateXtError::ClientError(format!("Failed to submit extrinsic: {:?}", e))
+			})?;
 		Ok(ExtrinsicProgress::new(subscription))
 	}
 

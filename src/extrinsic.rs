@@ -1,3 +1,4 @@
+use crate::error::{Error as SubstrateXtError, ExtrinsicError};
 use jsonrpsee::core::client::Subscription;
 use sc_transaction_pool_api::TransactionStatus;
 
@@ -19,7 +20,7 @@ impl<T: frame_system::Config> ExtrinsicProgress<T> {
 	}
 
 	/// Wait for extrinsic to get into block
-	pub async fn wait_for_in_block(mut self) -> Result<T::Hash, ExtrinsicError> {
+	pub async fn wait_for_in_block(mut self) -> Result<T::Hash, SubstrateXtError> {
 		while let Some(status) = self.next_item().await {
 			match status.map_err(|e| ExtrinsicError::Custom(e.to_string()))? {
 				// Finalized or otherwise in a block! Return.
@@ -31,11 +32,11 @@ impl<T: frame_system::Config> ExtrinsicProgress<T> {
 				_ => continue,
 			}
 		}
-		Err(ExtrinsicError::Custom("RPC subscription dropped".into()).into())
+		Err(SubstrateXtError::RpcError("RPC subscription dropped".into()).into())
 	}
 
 	/// Wait for extrinsic to get into a finalized block
-	pub async fn wait_for_finalized(mut self) -> Result<T::Hash, ExtrinsicError> {
+	pub async fn wait_for_finalized(mut self) -> Result<T::Hash, SubstrateXtError> {
 		while let Some(status) = self.next_item().await {
 			match status.map_err(|e| ExtrinsicError::Custom(e.to_string()))? {
 				// Finalized! Return.
@@ -47,17 +48,6 @@ impl<T: frame_system::Config> ExtrinsicProgress<T> {
 				_ => continue,
 			}
 		}
-		Err(ExtrinsicError::Custom("RPC subscription dropped".into()).into())
+		Err(SubstrateXtError::RpcError("RPC subscription dropped".into()).into())
 	}
-}
-
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum ExtrinsicError {
-	/// Error that occurs when a call failed.
-	#[error("Extrinsic was not finalized before timeout")]
-	FinalityTimeout,
-	#[error("{0}")]
-	Custom(String),
 }
