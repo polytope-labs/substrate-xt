@@ -4,11 +4,12 @@ use sp_runtime::{
 
 use sp_core::Pair as TraitPair;
 
-pub mod error;
+mod error;
 mod ext;
 mod extrinsic;
 mod rpc;
 
+pub use error::{Error as SubstrateXtError, ExtrinsicError};
 pub use rpc::Client;
 
 use extrinsic::ExtrinsicProgress;
