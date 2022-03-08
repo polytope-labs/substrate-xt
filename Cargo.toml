@@ -10,20 +10,20 @@ parity-scale-codec = "2.3.1"
 thiserror = "1.0.30"
 
 # client deps
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
-sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 
 
 # primitive deps
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
-sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
-sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 
 # frame deps
-frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 
 # Calling RPC
 jsonrpsee = { version = "0.8", features = ["ws-client", "macros"] }
@@ -31,7 +31,7 @@ futures = "0.3.19"
 tokio = { version = "1.16.1 ", features = ["rt-multi-thread"] }
 
 [dev-dependencies]
-node-runtime = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.16" }
-sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
-pallet-im-online = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+node-runtime = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.17" }
+sp-keyring = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+pallet-im-online = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
