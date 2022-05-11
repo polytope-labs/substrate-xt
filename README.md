@@ -72,7 +72,7 @@ Contains utilities for constructing and submiting extrinsics to a live substrate
 ## Testing
 
 1. To run the tests in this folder, download a substrate node binary,  
-   build the `substrate` node binary on branch `polkadot-v0.9.19`
+   build the `substrate` node binary on branch `polkadot-v0.9.20`
 
 2. Run this binary using the default websocket port
 3. Run `cargo +nightly test`
